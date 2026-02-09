@@ -1,0 +1,49 @@
+name: Build Astro Site
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+      
+      - name: Install dependencies
+        run: |
+          cd client
+          yarn install --frozen-lockfile
+      
+      - name: Build Astro site
+        run: |
+          cd client
+          yarn build
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: astro-build-${{ github.sha }}
+          path: client/dist/
+          retention-days: 30
+      
+      - name: Create build summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build completed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "📦 Artifacts uploaded as: astro-build-${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "📁 Build size: $(du -sh client/dist | cut -f1)" >> $GITHUB_STEP_SUMMARY
