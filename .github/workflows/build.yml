@@ -24,10 +24,35 @@ jobs:
           node-version: '20'
           cache: 'yarn'
       
-      - name: Install dependencies
+      - name: Install root dependencies
+        run: yarn install --frozen-lockfile
+      
+      - name: Install server dependencies
+        run: |
+          cd server
+          yarn install --frozen-lockfile
+      
+      - name: Install client dependencies
         run: |
           cd client
           yarn install --frozen-lockfile
+      
+      - name: Setup environment files
+        run: |
+          node --loader ts-node/esm copy-env.mts ./server
+          node --loader ts-node/esm copy-env.mts ./client
+      
+      - name: Import seed data to Strapi
+        run: |
+          cd server
+          yarn strapi import -f ./seed-data.tar.gz --force
+      
+      - name: Start Strapi server in background
+        run: |
+          cd server
+          yarn start &
+          echo "Waiting for Strapi to be ready..."
+          npx wait-on http://localhost:1337 -t 60000
       
       - name: Build Astro site
         run: |
